@@ -1,4 +1,12 @@
-import { langFromPath, parse, type Lang, type ParseResult } from "$lib/lang";
+import {
+  extractSchemaRef,
+  langFromPath,
+  loadSchema,
+  parse,
+  type Lang,
+  type ParseResult,
+} from "$lib/lang";
+import { disambiguateTitles } from "$lib/util/disambiguate";
 
 export type QueryLang = "jq" | "jsonpath";
 
@@ -16,6 +24,10 @@ export type Tab = {
   queryHistory: string[];
   selectedPath: string | null;
   parse: ParseResult;
+  /** URL of the active JSON Schema, if any (auto-detected from `$schema`). */
+  schemaUrl: string | null;
+  /** Fetched schema document, if loaded. `null` while pending or on failure. */
+  schema: object | null;
 };
 
 let counter = 0;
@@ -41,63 +53,19 @@ function makeTab(partial: Partial<Tab> = {}): Tab {
     queryHistory: partial.queryHistory ?? [],
     selectedPath: null,
     parse: parse(text, lang),
+    schemaUrl: null,
+    schema: null,
     ...partial,
   };
 }
 
 /**
- * Sublime-style tab disambiguation.
- *
- * Given the current tab list, returns a parallel array of display titles. When
- * more than one tab shares the same filename, the shortest unique parent-path
- * suffix is appended in parentheses, e.g. `Cargo.toml (src-tauri)` vs
- * `Cargo.toml (gguf-editor/src-tauri)`. Tabs with no path (e.g. "Untitled")
- * can't be disambiguated further and keep their bare title.
+ * Sublime-style tab disambiguation. Delegates to the shared
+ * `disambiguateTitles` helper in `$lib/util/disambiguate` so the diff view's
+ * compare header can use the same logic on its own two-item list.
  */
 function computeDisplayTitles(tabs: Tab[]): string[] {
-  const byTitle = new Map<string, number[]>();
-  for (let i = 0; i < tabs.length; i++) {
-    const arr = byTitle.get(tabs[i].title) ?? [];
-    arr.push(i);
-    byTitle.set(tabs[i].title, arr);
-  }
-
-  const result = tabs.map((t) => t.title);
-
-  for (const [, indices] of byTitle) {
-    if (indices.length < 2) continue;
-
-    // Parent-path segments reversed (immediate parent at index 0).
-    // `null` means this tab has no on-disk path and can't be disambiguated.
-    const revSegs: (string[] | null)[] = indices.map((i) => {
-      const p = tabs[i].path;
-      if (!p) return null;
-      const segs = p.split(/[/\\]/).filter(Boolean);
-      segs.pop(); // drop the filename itself
-      return segs.reverse();
-    });
-
-    let depth = 1;
-    let labels: string[] = [];
-    while (true) {
-      labels = revSegs.map((segs) => {
-        if (segs === null) return "";
-        const prefix = segs.slice(0, depth).reverse().join("/");
-        return prefix ? ` (${prefix})` : "";
-      });
-      const nonEmpty = labels.filter((l) => l !== "");
-      const unique = new Set(nonEmpty).size === nonEmpty.length;
-      const canGoDeeper = revSegs.some((s) => s !== null && depth < s.length);
-      if (unique || !canGoDeeper) break;
-      depth += 1;
-    }
-
-    labels.forEach((suffix, k) => {
-      result[indices[k]] = `${tabs[indices[k]].title}${suffix}`;
-    });
-  }
-
-  return result;
+  return disambiguateTitles(tabs.map((t) => ({ title: t.title, path: t.path })));
 }
 
 class TabsStore {
@@ -134,12 +102,18 @@ class TabsStore {
   }
 
   setActive(id: string) {
-    if (this.tabs.some((t) => t.id === id)) this.activeId = id;
+    if (this.tabs.some((t) => t.id === id)) {
+      this.activeId = id;
+      this.#reconcileSchema();
+    }
   }
 
   setActiveByIndex(i: number) {
     const t = this.tabs[i];
-    if (t) this.activeId = t.id;
+    if (t) {
+      this.activeId = t.id;
+      this.#reconcileSchema();
+    }
   }
 
   updateActive(patch: Partial<Tab>) {
@@ -154,6 +128,29 @@ class TabsStore {
         ? { ...t, text, parse: parse(text, t.lang) }
         : t
     );
+    this.#reconcileSchema();
+  }
+
+  /**
+   * Look at the active tab's parsed value, pull out `$schema` if present, and
+   * fetch+attach the schema asynchronously. Idempotent — if the URL hasn't
+   * changed since the last call, nothing happens.
+   */
+  #reconcileSchema() {
+    const t = this.active;
+    const nextUrl = t.parse.ok ? extractSchemaRef(t.parse.value, t.lang) : null;
+    if (nextUrl === t.schemaUrl) return;
+    // Clear the old binding eagerly.
+    this.tabs = this.tabs.map((x) =>
+      x.id === t.id ? { ...x, schemaUrl: nextUrl, schema: null } : x
+    );
+    if (!nextUrl) return;
+    const targetId = t.id;
+    void loadSchema(nextUrl).then((schema) => {
+      this.tabs = this.tabs.map((x) =>
+        x.id === targetId && x.schemaUrl === nextUrl ? { ...x, schema } : x
+      );
+    });
   }
 
   setLang(lang: Lang) {
@@ -162,6 +159,7 @@ class TabsStore {
         ? { ...t, lang, parse: parse(t.text, lang) }
         : t
     );
+    this.#reconcileSchema();
   }
 
   markSaved(path: string, title: string) {
@@ -201,9 +199,11 @@ class TabsStore {
             }
           : t
       );
+      this.#reconcileSchema();
       return;
     }
     this.newTab({ title, path, text: contents, savedText: contents, lang });
+    this.#reconcileSchema();
   }
 
   isDirty(id?: string): boolean {

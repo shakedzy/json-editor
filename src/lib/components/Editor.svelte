@@ -14,6 +14,11 @@
     defaultHighlightStyle,
   } from "@codemirror/language";
   import { codemirrorExtensions, type Lang } from "$lib/lang";
+  import { jsonSchema } from "codemirror-json-schema";
+  import { yamlSchema } from "codemirror-json-schema/yaml";
+  import type { Extension } from "@codemirror/state";
+
+  type JSONSchema = Parameters<typeof jsonSchema>[0];
 
   type Props = {
     value: string;
@@ -21,15 +26,25 @@
     dark?: boolean;
     fontSize?: number;
     lang?: Lang;
+    /** JSON Schema to apply for validation + autocomplete + hover. */
+    schema?: object | null;
   };
 
-  let { value, onChange, dark = false, fontSize = 13, lang = "json" }: Props = $props();
+  let { value, onChange, dark = false, fontSize = 13, lang = "json", schema = null }: Props = $props();
 
   let host: HTMLDivElement;
   let view: EditorView | null = null;
   const themeCompartment = new Compartment();
   const fontCompartment = new Compartment();
   const langCompartment = new Compartment();
+  const schemaCompartment = new Compartment();
+
+  function schemaExtension(lang: Lang, schema: object | null): Extension[] {
+    if (!schema) return [];
+    if (lang === "json") return jsonSchema(schema as JSONSchema);
+    if (lang === "yaml") return yamlSchema(schema as JSONSchema);
+    return [];
+  }
 
   function themeExtension(isDark: boolean) {
     return EditorView.theme(
@@ -86,6 +101,7 @@
         search({ top: true }),
         syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
         langCompartment.of(codemirrorExtensions(lang)),
+        schemaCompartment.of(schemaExtension(lang, schema)),
         keymap.of([
           ...defaultKeymap,
           ...historyKeymap,
@@ -141,8 +157,30 @@
     });
   });
 
+  $effect(() => {
+    view?.dispatch({
+      effects: schemaCompartment.reconfigure(schemaExtension(lang, schema)),
+    });
+  });
+
   export function focus() {
     view?.focus();
+  }
+
+  /**
+   * Scroll to and select the text range [offset, offset+length]. Used by the
+   * tree view to "jump to the line for this key" when a node is clicked.
+   */
+  export function revealOffset(offset: number, length: number) {
+    if (!view) return;
+    const docLen = view.state.doc.length;
+    const from = Math.min(docLen, Math.max(0, offset));
+    const to = Math.min(docLen, Math.max(from, from + length));
+    view.focus();
+    view.dispatch({
+      selection: { anchor: from, head: to },
+      effects: EditorView.scrollIntoView(from, { y: "center" }),
+    });
   }
 
   export function openFind() {

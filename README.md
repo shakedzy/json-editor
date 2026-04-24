@@ -23,11 +23,13 @@ Open a file (or paste a blob), query with **jq** or **JSONPath**, browse huge do
 
 - **Three formats, one app** — JSON, YAML, and TOML. Each tab remembers its source format; open a `.yaml`, save a `.yaml`.
 - **Editor** — CodeMirror 6 with per-language syntax highlighting, folding, live lint, `⌘F` find.
-- **Tree view** — virtualized; stays at 60 FPS on 100 k+ nodes. Click any node to copy its JSONPath.
+- **Tree view** — virtualized; stays at 60 FPS on 100 k+ nodes. Click any node to reveal it in the editor; ⌘-click to copy its JSONPath.
 - **Query bar** — **jq** (real `jq`, compiled to WASM) or **JSONPath**. Works on YAML/TOML too: jq sees the parsed value as JSON. `⌘↩` to run, `↑`/`↓` for history.
+- **JSON Schema** — drop a `$schema` URL into your JSON or YAML doc and JSON++ Editor fetches it, validates in-gutter, and autocompletes keys and enum values.
+- **Diff view** — `⌘⇧D` to open any file and compare it side-by-side with the active tab (line and character-level highlights).
 - **Format / Minify / Validate** — `⌘⇧F` / `⌘⇧M` / `⌘⇧V`. Auto-format on paste. (Minify is JSON-only — YAML/TOML don't have a meaningful minimized form.)
 - **File associations** — right-click a `.json`, `.yaml`, `.yml`, or `.toml` file and JSON++ Editor shows up in the system "Open With" menu (macOS Finder, Linux file managers, Windows Explorer).
-- **Multi-tab** — `⌘T` / `⌘W` / `⌘1…9` (or `Ctrl` on Linux/Windows), drag-drop files, recent files.
+- **Multi-tab** — `⌘T` / `⌘W` / `⌘1…9` (or `Ctrl` on Linux/Windows), drag-drop files, recent files, Sublime-style disambiguation for same-named files.
 - **Native menubar on macOS**, standard window menus elsewhere. All the expected shortcuts.
 - **Theme** — light / dark / follows system. Font size & indent configurable.
 - **Tiny** — ~4 MB DMG, ~5 MB AppImage / MSI.
@@ -67,6 +69,7 @@ Signed & notarized macOS builds + code-signed Windows binaries are on the roadma
 | Run query | `⌘↩` |
 | Toggle tree pane | `⌘⇧T` |
 | Toggle query bar | `⌘⇧Q` |
+| Compare with file | `⌘⇧D` |
 | Preferences | `⌘,` |
 
 ## Develop
@@ -133,17 +136,3 @@ scripts/
 - [`jsonpath-plus`](https://www.npmjs.com/package/jsonpath-plus) — JSONPath queries.
 - [`@tanstack/svelte-virtual`](https://tanstack.com/virtual) — virtualized tree rendering.
 - [Tailwind CSS v4](https://tailwindcss.com).
-
-## Roadmap
-
-- [ ] Cross-format conversion (JSON ↔ YAML ↔ TOML) with warnings at lossy edges.
-- [ ] Inline tree editing (rename keys, change values, delete / insert nodes).
-- [ ] JSON Schema validation & autocomplete.
-- [ ] Diff view between two documents.
-- [ ] JSON5 / JSONC input.
-- [ ] Apple Developer ID signing + notarization in CI.
-- [ ] Publishing releases to [JFrog Fly](https://docs.fly.jfrog.com) for private distribution.
-
-## License
-
-MIT — see [LICENSE](./LICENSE).

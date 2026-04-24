@@ -64,6 +64,12 @@ pub fn build_menu(app: &AppHandle) -> tauri::Result<Menu<Wry>> {
                 .accelerator("Cmd+Shift+S")
                 .build(app)?,
         )
+        .separator()
+        .item(
+            &MenuItemBuilder::with_id("file.compare", "Compare With…")
+                .accelerator("Cmd+Shift+D")
+                .build(app)?,
+        )
         .build()?;
 
     // Edit menu

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { tabs } from "$lib/stores/tabs.svelte";
-  import { countNodes, langLabel } from "$lib/lang";
+  import { countNodes, langLabel, schemaLabel } from "$lib/lang";
 
   const active = $derived(tabs.active);
 
@@ -30,6 +30,13 @@
   {#if active.selectedPath}
     <span class="sep">·</span>
     <span class="path" title={active.selectedPath}>{active.selectedPath}</span>
+  {/if}
+
+  {#if active.schemaUrl}
+    <span class="sep">·</span>
+    <span class="schema-chip" title={`Schema: ${active.schemaUrl}${active.schema ? "" : " (loading…)"}`} class:loading={!active.schema}>
+      ⌖ {schemaLabel(active.schemaUrl)}
+    </span>
   {/if}
 
   <span class="spacer"></span>
@@ -79,6 +86,22 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+  .schema-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 0 6px;
+    height: 16px;
+    border-radius: 3px;
+    background: color-mix(in oklab, var(--ok) 14%, transparent);
+    color: var(--fg);
+    font-size: 10px;
+    font-weight: 600;
+  }
+  .schema-chip.loading {
+    background: color-mix(in oklab, var(--fg-faint) 14%, transparent);
+    color: var(--fg-muted);
   }
   .spacer { flex: 1; }
   .dim { color: var(--fg-faint); }

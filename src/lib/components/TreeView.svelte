@@ -4,7 +4,7 @@
   type Props = {
     value: unknown;
     selectedPath: string | null;
-    onSelect: (path: string) => void;
+    onSelect: (jsonPath: string, segments: PathSegment[]) => void;
   };
   let { value, selectedPath, onSelect }: Props = $props();
 
@@ -28,6 +28,7 @@
     type: "close";
     pathKey: string;     // same pathKey as the opening row (so click toggles it)
     jsonPath: string;
+    path: PathSegment[]; // parent container's path (for reveal-in-editor)
     depth: number;
     kind: "object" | "array";
     isLastChild: boolean;
@@ -90,6 +91,7 @@
           type: "close",
           pathKey,
           jsonPath: jp,
+          path,
           depth,
           kind: kind as "object" | "array",
           isLastChild,
@@ -169,27 +171,27 @@
     expanded = next;
   }
 
-  function copyPath(jsonPath: string) {
+  function copyPath(jsonPath: string, segments: PathSegment[]) {
     navigator.clipboard?.writeText(jsonPath).catch(() => {});
-    onSelect(jsonPath);
+    onSelect(jsonPath, segments);
+  }
+
+  function reveal(row: Row) {
+    const segments = row.path;
+    onSelect(row.jsonPath, segments);
   }
 
   function onRowClick(row: Row, e: MouseEvent) {
-    // Cmd/Ctrl-click: always copy path (works on containers too).
+    // Cmd/Ctrl-click: copy path — no toggle, no reveal jump.
     if (e.metaKey || e.ctrlKey) {
-      copyPath(row.jsonPath);
+      copyPath(row.jsonPath, row.path);
       return;
     }
-    if (row.type === "close") {
+    // Everything else: reveal in the editor. Containers also toggle.
+    reveal(row);
+    if (row.type === "close" || (row.type === "item" && row.isContainer)) {
       toggle(row.pathKey);
-      return;
     }
-    if (row.isContainer) {
-      toggle(row.pathKey);
-      return;
-    }
-    // Leaf: select + copy path.
-    copyPath(row.jsonPath);
   }
 
   function onRowDblClick(row: Row, e: MouseEvent) {
@@ -293,7 +295,7 @@
             <button
               class="copy-btn"
               title="Copy JSONPath — {row.jsonPath}"
-              onclick={(e) => { e.stopPropagation(); copyPath(row.jsonPath); }}
+              onclick={(e) => { e.stopPropagation(); copyPath(row.jsonPath, row.path); }}
               aria-label="Copy JSONPath"
             >⧉</button>
           {:else}

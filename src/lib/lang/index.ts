@@ -19,6 +19,8 @@ import {
 } from "./types";
 
 export * from "./types";
+export { locatePath, type Location } from "./locate";
+export { extractSchemaRef, loadSchema, schemaLabel } from "./schema";
 
 export function parse(text: string, lang: Lang): ParseResult {
   switch (lang) {

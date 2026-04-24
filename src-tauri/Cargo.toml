@@ -1,7 +1,7 @@
 [package]
 name = "json-editor"
-version = "0.1.0"
-description = "A fast, native JSON viewer and editor"
+version = "0.1.1"
+description = "A fast, native JSON · YAML · TOML viewer and editor"
 authors = ["Shaked Z"]
 edition = "2021"
 

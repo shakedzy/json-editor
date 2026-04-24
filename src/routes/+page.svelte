@@ -15,6 +15,7 @@
   import StatusBar from "$lib/components/StatusBar.svelte";
   import ResultPane from "$lib/components/ResultPane.svelte";
   import PreferencesDialog from "$lib/components/PreferencesDialog.svelte";
+  import DiffView from "$lib/components/DiffView.svelte";
 
   import { tabs } from "$lib/stores/tabs.svelte";
   import { settings } from "$lib/stores/settings.svelte";
@@ -24,14 +25,21 @@
     langFromPath,
     langLabel,
     LANG_EXTENSIONS,
+    locatePath,
     minify,
     parse,
     supportsMinify,
   } from "$lib/lang";
+  import type { PathSegment } from "$lib/json/path";
   import { applyTheme, watchSystemTheme } from "$lib/util/theme";
   import { bindShortcuts } from "$lib/util/shortcuts";
+  import { disambiguateTitles } from "$lib/util/disambiguate";
 
-  let editorRef = $state<{ focus: () => void; openFind: () => void } | null>(null);
+  let editorRef = $state<{
+    focus: () => void;
+    openFind: () => void;
+    revealOffset: (offset: number, length: number) => void;
+  } | null>(null);
   let showPrefs = $state(false);
 
   const active = $derived(tabs.active);
@@ -126,6 +134,53 @@
   let queryOutput = $state<string | null>(null);
   let queryError = $state<string | null>(null);
 
+  // ---- Diff view ----
+  let diffState = $state<{
+    leftTitle: string;
+    rightTitle: string;
+    left: string;
+    right: string;
+    lang: import("$lib/lang").Lang;
+  } | null>(null);
+
+  async function compareActiveTabWith() {
+    const selected = await openDialog({
+      multiple: false,
+      filters: [
+        {
+          name: "Supported",
+          extensions: [...LANG_EXTENSIONS.json, ...LANG_EXTENSIONS.yaml, ...LANG_EXTENSIONS.toml],
+        },
+      ],
+    });
+    if (!selected || Array.isArray(selected)) return;
+    try {
+      const rightText = await readTextFile(selected);
+      const rightTitle = selected.split("/").pop() || selected;
+      // Same Sublime-style treatment we use in the tab bar: if the two
+      // filenames collide, append the shortest unique parent-path suffix to
+      // each so the compare header reads e.g. "Cargo.toml (src-tauri)" vs
+      // "Cargo.toml (gguf-editor)".
+      const [leftDisplay, rightDisplay] = disambiguateTitles([
+        { title: active.title, path: active.path },
+        { title: rightTitle, path: selected },
+      ]);
+      diffState = {
+        leftTitle: leftDisplay,
+        rightTitle: rightDisplay,
+        left: active.text,
+        right: rightText,
+        lang: langFromPath(selected) ?? active.lang,
+      };
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  function closeDiff() {
+    diffState = null;
+  }
+
   function onQueryResult(output: string | null, error: string | null) {
     queryOutput = output;
     queryError = error;
@@ -196,6 +251,8 @@
       "Cmd+Shift+T": (e) => { e.preventDefault(); settings.update({ showTreePane: !settings.value.showTreePane }); },
       "Cmd+Shift+Q": (e) => { e.preventDefault(); settings.update({ showQueryBar: !settings.value.showQueryBar }); },
       "Cmd+,": (e) => { e.preventDefault(); showPrefs = true; },
+      "Cmd+Shift+D": (e) => { e.preventDefault(); compareActiveTabWith(); },
+      "Escape": (e) => { if (diffState) { e.preventDefault(); closeDiff(); } },
       "Cmd+1": (e) => { e.preventDefault(); tabs.setActiveByIndex(0); },
       "Cmd+2": (e) => { e.preventDefault(); tabs.setActiveByIndex(1); },
       "Cmd+3": (e) => { e.preventDefault(); tabs.setActiveByIndex(2); },
@@ -234,6 +291,8 @@
         editorRef?.openFind(); break;
       case "preferences":
         showPrefs = true; break;
+      case "file.compare":
+        compareActiveTabWith(); break;
     }
   }
 
@@ -251,8 +310,13 @@
     }
   }
 
-  function onTreeSelect(path: string) {
-    tabs.updateActive({ selectedPath: path });
+  function onTreeSelect(jsonPath: string, segments: PathSegment[]) {
+    tabs.updateActive({ selectedPath: jsonPath });
+    const tab = tabs.active;
+    const loc = locatePath(tab.text, tab.lang, segments);
+    if (loc && editorRef) {
+      editorRef.revealOffset(loc.offset, loc.length);
+    }
   }
 </script>
 
@@ -273,6 +337,25 @@
   {/if}
 
   <div class="main">
+    {#if diffState}
+      <div class="diff-head">
+        <span class="diff-title">Compare</span>
+        <span class="diff-sub">{diffState.leftTitle} ↔ {diffState.rightTitle}</span>
+        <span class="diff-spacer"></span>
+        <button class="diff-close" onclick={closeDiff} aria-label="Close diff" title="Close diff (Esc)">✕</button>
+      </div>
+      <div class="diff-body">
+        <DiffView
+          left={diffState.left}
+          right={diffState.right}
+          leftTitle={diffState.leftTitle}
+          rightTitle={diffState.rightTitle}
+          lang={diffState.lang}
+          {dark}
+          fontSize={settings.value.fontSize}
+        />
+      </div>
+    {:else}
     <div class="panes">
       <div class="pane editor-pane">
         {#key active.id}
@@ -282,6 +365,7 @@
             {dark}
             fontSize={settings.value.fontSize}
             lang={active.lang}
+            schema={active.schema}
             bind:this={editorRef}
           />
         {/key}
@@ -318,6 +402,7 @@
         error={queryError}
         onClose={() => { queryOutput = null; queryError = null; }}
       />
+    {/if}
     {/if}
   </div>
 
@@ -371,4 +456,29 @@
   .empty.error p:first-child { color: var(--danger); font-weight: 600; }
   .empty .small { font-size: 12px; }
   .empty .muted { color: var(--fg-faint); max-width: 360px; }
+
+  /* Diff / compare mode */
+  .diff-head {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 30px;
+    padding: 0 10px;
+    background: color-mix(in oklab, var(--accent) 18%, var(--bg-elev));
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    color: var(--fg);
+    flex-shrink: 0;
+  }
+  .diff-title { font-weight: 700; letter-spacing: 0.02em; }
+  .diff-sub { color: var(--fg-muted); font-family: var(--font-mono); font-size: 11px; }
+  .diff-spacer { flex: 1; }
+  .diff-close {
+    width: 22px; height: 22px;
+    border-radius: 4px;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--fg-muted);
+  }
+  .diff-close:hover { background: var(--bg-elev-2); color: var(--fg); }
+  .diff-body { flex: 1; min-height: 0; }
 </style>
