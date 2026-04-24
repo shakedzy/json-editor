@@ -1,0 +1,92 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 420" width="1400" height="420">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4c4fe0"/>
+      <stop offset="45%" stop-color="#6366f1"/>
+      <stop offset="100%" stop-color="#7c7fff"/>
+    </linearGradient>
+    <linearGradient id="glow" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="120%">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="10"/>
+      <feOffset dx="0" dy="10" result="o"/>
+      <feComponentTransfer><feFuncA type="linear" slope="0.35"/></feComponentTransfer>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1400" height="420" fill="url(#bg)"/>
+  <rect width="1400" height="420" fill="url(#glow)"/>
+
+  <!-- Faint JSON text background -->
+  <g opacity="0.08" font-family="ui-monospace, 'SF Mono', Menlo, monospace" font-size="16" fill="#ffffff">
+    <text x="40" y="50">{</text>
+    <text x="64" y="80">"name": "json-editor",</text>
+    <text x="64" y="104">"version": "0.1.0",</text>
+    <text x="64" y="128">"platform": "macOS",</text>
+    <text x="64" y="152">"tags": ["tauri", "svelte", "rust"],</text>
+    <text x="64" y="176">"features": {</text>
+    <text x="88" y="200">"tree": true,</text>
+    <text x="88" y="224">"jq": true,</text>
+    <text x="88" y="248">"jsonpath": true,</text>
+    <text x="88" y="272">"search": true</text>
+    <text x="64" y="296">},</text>
+    <text x="64" y="320">"license": "MIT"</text>
+    <text x="40" y="344">}</text>
+  </g>
+
+  <!-- Icon -->
+  <g transform="translate(80 110) scale(0.18)" filter="url(#shadow)">
+    <rect x="0" y="0" width="1024" height="1024" rx="224" ry="224" fill="#ffffff"/>
+    <g fill="none" stroke="#6366f1" stroke-width="64" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M 360 264 C 240 264 232 320 232 400 L 232 464 C 232 504 208 512 176 512 C 208 512 232 520 232 560 L 232 624 C 232 704 240 760 360 760"/>
+      <path d="M 664 264 C 784 264 792 320 792 400 L 792 464 C 792 504 816 512 848 512 C 816 512 792 520 792 560 L 792 624 C 792 704 784 760 664 760"/>
+    </g>
+    <g fill="#6366f1">
+      <circle cx="420" cy="512" r="36"/>
+      <circle cx="512" cy="512" r="36"/>
+      <circle cx="604" cy="512" r="36"/>
+    </g>
+  </g>
+
+  <!-- Title -->
+  <g font-family="-apple-system, 'Helvetica Neue', sans-serif" fill="#ffffff">
+    <text x="330" y="192" font-size="88" font-weight="800" letter-spacing="-2">JSON<tspan opacity="0.7" font-weight="900">++</tspan> Editor</text>
+    <text x="332" y="240" font-size="22" font-weight="500" opacity="0.92">
+      A fast, native JSON · YAML · TOML viewer &amp; editor — macOS · Linux · Windows
+    </text>
+    <text x="332" y="270" font-size="15" opacity="0.72" font-family="ui-monospace, 'SF Mono', Menlo, monospace">
+      format · tree · search · jq · JSONPath · virtualized for huge files
+    </text>
+  </g>
+
+  <!-- Pills -->
+  <g font-family="-apple-system, 'Helvetica Neue', sans-serif" font-size="13" font-weight="600" fill="#ffffff">
+    <g transform="translate(332 304)">
+      <rect x="0" y="0" width="66" height="30" rx="15" ry="15" fill="#ffffff22" stroke="#ffffff44"/>
+      <text x="33" y="20" text-anchor="middle">JSON</text>
+    </g>
+    <g transform="translate(408 304)">
+      <rect x="0" y="0" width="70" height="30" rx="15" ry="15" fill="#ffffff22" stroke="#ffffff44"/>
+      <text x="35" y="20" text-anchor="middle">YAML</text>
+    </g>
+    <g transform="translate(488 304)">
+      <rect x="0" y="0" width="68" height="30" rx="15" ry="15" fill="#ffffff22" stroke="#ffffff44"/>
+      <text x="34" y="20" text-anchor="middle">TOML</text>
+    </g>
+    <g transform="translate(566 304)">
+      <rect x="0" y="0" width="100" height="30" rx="15" ry="15" fill="#ffffff22" stroke="#ffffff44"/>
+      <text x="50" y="20" text-anchor="middle">Tauri 2</text>
+    </g>
+    <g transform="translate(676 304)">
+      <rect x="0" y="0" width="104" height="30" rx="15" ry="15" fill="#ffffff22" stroke="#ffffff44"/>
+      <text x="52" y="20" text-anchor="middle">jq (WASM)</text>
+    </g>
+    <g transform="translate(790 304)">
+      <rect x="0" y="0" width="96" height="30" rx="15" ry="15" fill="#ffffff22" stroke="#ffffff44"/>
+      <text x="48" y="20" text-anchor="middle">JSONPath</text>
+    </g>
+  </g>
+</svg>

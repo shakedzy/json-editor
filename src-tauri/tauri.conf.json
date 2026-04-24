@@ -1,0 +1,72 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "JSON++ Editor",
+  "version": "0.1.0",
+  "identifier": "com.shakedz.jsoneditor",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "JSON++ Editor",
+        "width": 1200,
+        "height": 800,
+        "minWidth": 720,
+        "minHeight": 480,
+        "dragDropEnabled": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["app", "dmg"],
+    "category": "DeveloperTool",
+    "copyright": "© 2026 Shaked Z",
+    "shortDescription": "Fast native JSON, YAML, and TOML viewer/editor for macOS",
+    "longDescription": "JSON++ Editor — a native viewer and editor for JSON, YAML, and TOML with tree view, jq, and JSONPath queries.",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "fileAssociations": [
+      {
+        "ext": ["json", "jsonc", "geojson", "map"],
+        "name": "JSON Document",
+        "description": "JavaScript Object Notation",
+        "role": "Editor"
+      },
+      {
+        "ext": ["yaml", "yml"],
+        "name": "YAML Document",
+        "description": "YAML Ain't Markup Language",
+        "role": "Editor"
+      },
+      {
+        "ext": ["toml"],
+        "name": "TOML Document",
+        "description": "Tom's Obvious Minimal Language",
+        "role": "Editor"
+      }
+    ],
+    "macOS": {
+      "minimumSystemVersion": "10.15",
+      "signingIdentity": "-",
+      "dmg": {
+        "background": "../assets/dmg-background.png",
+        "windowSize": { "width": 660, "height": 400 },
+        "appPosition": { "x": 200, "y": 210 },
+        "applicationFolderPosition": { "x": 460, "y": 210 }
+      }
+    }
+  }
+}
