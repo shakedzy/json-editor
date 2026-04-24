@@ -78,16 +78,12 @@ jobs:
       - name: Generate banner & DMG background PNGs
         run: node scripts/build-images.mjs
 
+      # Ad-hoc signed on every OS (macOS uses `signingIdentity: "-"` from
+      # tauri.conf.json, Windows/Linux don't sign). No APPLE_* env vars —
+      # even passing them empty makes tauri-action attempt `security import`
+      # on a blank cert and fail the job.
       - name: Build Tauri app
         uses: tauri-apps/tauri-action@v0
-        env:
-          # macOS notarization — set these as repo secrets to enable:
-          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
-          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         # No tagName/releaseId → tauri-action only builds; the release job publishes.
 
       - name: Patch DMG (remove .VolumeIcon.icns, reposition .background)
