@@ -5,7 +5,21 @@
   import { invoke } from "@tauri-apps/api/core";
   import { getCurrentWebview } from "@tauri-apps/api/webview";
   import { open as openDialog, save as saveDialog } from "@tauri-apps/plugin-dialog";
-  import { readTextFile, writeTextFile } from "@tauri-apps/plugin-fs";
+
+  // Read/write go through our own Rust commands (`read_file` / `write_file` in
+  // src-tauri/src/commands.rs) — not @tauri-apps/plugin-fs — because the
+  // plugin's capability scoping rejects arbitrary paths like the ones that
+  // arrive via "Open With" from outside the app's sandboxed base dirs.
+  async function readTextFile(path: string): Promise<string> {
+    const r = await invoke<{ path: string; name: string; contents: string }>(
+      "read_file",
+      { path }
+    );
+    return r.contents;
+  }
+  async function writeTextFile(path: string, contents: string): Promise<void> {
+    await invoke("write_file", { path, contents });
+  }
 
   import TabBar from "$lib/components/TabBar.svelte";
   import Toolbar from "$lib/components/Toolbar.svelte";
