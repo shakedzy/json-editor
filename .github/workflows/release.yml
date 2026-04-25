@@ -129,6 +129,38 @@ jobs:
             echo "name=${GITHUB_REF_NAME}" >> "$GITHUB_OUTPUT"
           fi
 
+      # Build a flat newline-separated list of uploadable files so that:
+      #  • neither GitHub-release nor Fly upload patterns can match a
+      #    directory (the Fly CLI can't checksum directories), and
+      #  • we don't fail the release when, say, RPM or .sig files weren't
+      #    produced (only the updater plugin emits .sig files; we don't use it).
+      - name: Enumerate release files
+        id: files
+        run: |
+          {
+            echo 'list<<EOF'
+            find artifacts -type f \( \
+              -name '*.dmg' -o \
+              -name '*.app.tar.gz' -o \
+              -name '*.AppImage' -o \
+              -name '*.deb' -o \
+              -name '*.rpm' -o \
+              -name '*.msi' -o \
+              -name '*.exe' \
+            \) | sort
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+          echo "Files to publish:"
+          find artifacts -type f \( \
+            -name '*.dmg' -o \
+            -name '*.app.tar.gz' -o \
+            -name '*.AppImage' -o \
+            -name '*.deb' -o \
+            -name '*.rpm' -o \
+            -name '*.msi' -o \
+            -name '*.exe' \
+          \) | sort
+
       - name: Create or update release
         uses: softprops/action-gh-release@v2
         with:
@@ -136,23 +168,9 @@ jobs:
           name: ${{ steps.tag.outputs.name }}
           draft: true
           generate_release_notes: true
-          # `actions/upload-artifact` preserves the bundle subdir layout
-          # (dmg/, macos/, appimage/, deb/, …) — so download yields per-format
-          # directories under `artifacts/`. We list each file extension we
-          # actually ship; a bare `artifacts/**/*` would also match the
-          # subdirectories themselves, which the Fly CLI can't checksum.
-          # Comment these out to detach the built binaries from the GitHub
-          # Release page (they'd live only in Fly then).
-          files: |
-            artifacts/**/*.dmg
-            artifacts/**/*.app.tar.gz
-            artifacts/**/*.app.tar.gz.sig
-            artifacts/**/*.AppImage
-            artifacts/**/*.AppImage.sig
-            artifacts/**/*.deb
-            artifacts/**/*.rpm
-            artifacts/**/*.msi
-            artifacts/**/*.exe
+          # Comment the line below to detach the built binaries from the
+          # GitHub Release page (they'd live only in Fly then).
+          files: ${{ steps.files.outputs.list }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -161,13 +179,4 @@ jobs:
         with:
           name: json-editor
           version: ${{ steps.tag.outputs.name }}
-          files: |
-            artifacts/**/*.dmg
-            artifacts/**/*.app.tar.gz
-            artifacts/**/*.app.tar.gz.sig
-            artifacts/**/*.AppImage
-            artifacts/**/*.AppImage.sig
-            artifacts/**/*.deb
-            artifacts/**/*.rpm
-            artifacts/**/*.msi
-            artifacts/**/*.exe
+          files: ${{ steps.files.outputs.list }}
