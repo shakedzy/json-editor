@@ -41,7 +41,6 @@ Grab the build for your platform from the [latest release](https://github.com/sh
 | OS | File |
 | --- | --- |
 | macOS (Apple Silicon) | `JSON++ Editor_*_aarch64.dmg` |
-| macOS (Intel) | `JSON++ Editor_*_x64.dmg` |
 | Linux | `JSON++ Editor_*_amd64.AppImage` or `.deb` |
 | Windows | `JSON++ Editor_*_x64.msi` or the NSIS `.exe` |
 
