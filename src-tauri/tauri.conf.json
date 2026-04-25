@@ -26,7 +26,7 @@
   },
   "bundle": {
     "active": true,
-    "targets": ["app", "dmg"],
+    "targets": "all",
     "category": "DeveloperTool",
     "copyright": "© 2026 Shaked Z",
     "shortDescription": "Fast native JSON, YAML, and TOML viewer/editor for macOS",
