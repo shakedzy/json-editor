@@ -136,13 +136,23 @@ jobs:
           name: ${{ steps.tag.outputs.name }}
           draft: true
           generate_release_notes: true
-          # `actions/upload-artifact` preserves the bundle subdir (`dmg/`,
-          # `macos/`, `appimage/`, …), so download yields directories under
-          # `artifacts/`. We need to glob recursively to match the actual
-          # files; `artifacts/*` would match those subdirectories, not files.
-          # Comment the line below to detach the built binaries from the
-          # GitHub Release page (they'd live only in Fly then).
-          files: artifacts/**/*
+          # `actions/upload-artifact` preserves the bundle subdir layout
+          # (dmg/, macos/, appimage/, deb/, …) — so download yields per-format
+          # directories under `artifacts/`. We list each file extension we
+          # actually ship; a bare `artifacts/**/*` would also match the
+          # subdirectories themselves, which the Fly CLI can't checksum.
+          # Comment these out to detach the built binaries from the GitHub
+          # Release page (they'd live only in Fly then).
+          files: |
+            artifacts/**/*.dmg
+            artifacts/**/*.app.tar.gz
+            artifacts/**/*.app.tar.gz.sig
+            artifacts/**/*.AppImage
+            artifacts/**/*.AppImage.sig
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+            artifacts/**/*.msi
+            artifacts/**/*.exe
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -151,4 +161,13 @@ jobs:
         with:
           name: json-editor
           version: ${{ steps.tag.outputs.name }}
-          files: artifacts/**/*
+          files: |
+            artifacts/**/*.dmg
+            artifacts/**/*.app.tar.gz
+            artifacts/**/*.app.tar.gz.sig
+            artifacts/**/*.AppImage
+            artifacts/**/*.AppImage.sig
+            artifacts/**/*.deb
+            artifacts/**/*.rpm
+            artifacts/**/*.msi
+            artifacts/**/*.exe
