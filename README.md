@@ -44,11 +44,17 @@ Grab the build for your platform from the [latest release](https://github.com/sh
 | Linux | `JSON++ Editor_*_amd64.AppImage` or `.deb` |
 | Windows | `JSON++ Editor_*_x64.msi` or the NSIS `.exe` |
 
-**macOS**: open the DMG, drag **JSON++ Editor** onto **Applications**. First launch: because the app is ad-hoc signed, Gatekeeper will complain — right-click in Applications → **Open** → **Open**. After that, launch normally.
+<ins>**macOS**</ins>: open the DMG, drag **JSON++ Editor** onto **Applications**. 
 
-**Linux**: `chmod +x JSON++\ Editor_*.AppImage && ./JSON++\ Editor_*.AppImage`, or `sudo dpkg -i json++-editor_*.deb`.
+As the Mac builds are not notarized with an Apple Developer ID, so on first launch macOS will block the app with *"Apple could not verify 'JSON++ Editor' is free of malware…"*. After moving the app to `/Applications`, run:
 
-**Windows**: run the `.msi` or `.exe`. SmartScreen may warn on unsigned builds — "More info" → "Run anyway".
+```bash
+xattr -cr "/Applications/JSON++ Editor.app"
+```
+
+<ins>**Linux**</ins>: `chmod +x JSON++\ Editor_*.AppImage && ./JSON++\ Editor_*.AppImage`, or `sudo dpkg -i json++-editor_*.deb`.
+
+<ins>**Windows**</ins>: run the `.msi` or `.exe`. SmartScreen may warn on unsigned builds — "More info" → "Run anyway".
 
 Signed & notarized macOS builds + code-signed Windows binaries are on the roadmap.
 
