@@ -11,12 +11,25 @@
     foldKeymap,
     indentOnInput,
     syntaxHighlighting,
-    defaultHighlightStyle,
+    HighlightStyle,
   } from "@codemirror/language";
+  import { tags as t } from "@lezer/highlight";
   import { codemirrorExtensions, type Lang } from "$lib/lang";
   import { jsonSchema } from "codemirror-json-schema";
   import { yamlSchema } from "codemirror-json-schema/yaml";
   import type { Extension } from "@codemirror/state";
+
+  const appHighlightStyle = HighlightStyle.define([
+    { tag: t.propertyName, color: "var(--type-key)" },
+    { tag: [t.string, t.special(t.string)], color: "var(--type-string)" },
+    { tag: [t.number, t.integer, t.float], color: "var(--type-number)" },
+    { tag: t.bool, color: "var(--type-bool)" },
+    { tag: t.null, color: "var(--type-null)", fontStyle: "italic" },
+    { tag: [t.keyword, t.atom], color: "var(--type-bool)" },
+    { tag: [t.comment, t.lineComment, t.blockComment], color: "var(--fg-faint)", fontStyle: "italic" },
+    { tag: [t.punctuation, t.separator, t.bracket, t.brace, t.squareBracket, t.paren], color: "var(--fg-muted)" },
+    { tag: t.invalid, color: "var(--danger)" },
+  ]);
 
   type JSONSchema = Parameters<typeof jsonSchema>[0];
 
@@ -99,7 +112,7 @@
         bracketMatching(),
         highlightSelectionMatches(),
         search({ top: true }),
-        syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+        syntaxHighlighting(appHighlightStyle, { fallback: true }),
         langCompartment.of(codemirrorExtensions(lang)),
         schemaCompartment.of(schemaExtension(lang, schema)),
         keymap.of([
